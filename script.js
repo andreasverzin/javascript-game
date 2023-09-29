@@ -69,7 +69,7 @@ window.addEventListener('load', function() {
             this.angle = 0;
             this.va = Math.random() * 0.2 - 0.1;
             this.bounced = 0;
-            this.bottomBounceBoundary = Math.random() * 100 + 60;
+            this.bottomBounceBoundary = Math.random() * 80 + 60;
         }
         update() {
             this.angle += this.va;
@@ -174,7 +174,7 @@ window.addEventListener('load', function() {
         enterPowerUp() {
             this.powerUpTimer = 0;
             this.powerUp = true;
-            this.game.ammo = this.game.maxAmmo;
+            if (this.game.ammo < this.game.maxAmmo) this.game.ammo = this.game.maxAmmo;
         }
     }
 
@@ -216,7 +216,7 @@ window.addEventListener('load', function() {
             super(game);
             this.width = 228;
             this.height = 169;
-            this.y = Math.random() * (this.game.height * 0.9 - this.height);
+            this.y = Math.random() * (this.game.height * 0.95 - this.height);
             this.image = document.getElementById('angler1');
             this.frameY = Math.floor(Math.random() * 3);
             this.lives = 2;
@@ -229,7 +229,7 @@ window.addEventListener('load', function() {
             super(game);
             this.width = 213;
             this.height = 165;
-            this.y = Math.random() * (this.game.height * 0.9 - this.height);
+            this.y = Math.random() * (this.game.height * 0.95 - this.height);
             this.image = document.getElementById('angler2');
             this.frameY = Math.floor(Math.random() * 2);
             this.lives = 3;
@@ -242,12 +242,43 @@ window.addEventListener('load', function() {
             super(game);
             this.width = 99;
             this.height = 95;
-            this.y = Math.random() * (this.game.height * 0.9 - this.height);
+            this.y = Math.random() * (this.game.height * 0.95 - this.height);
             this.image = document.getElementById('lucky');
             this.frameY = Math.floor(Math.random() * 2);
             this.lives = 3;
             this.score = 15;
             this.type = 'lucky';
+        }
+    }
+
+    class HiveWhale extends Enemy{
+        constructor(game) {
+            super(game);
+            this.width = 400;
+            this.height = 227;
+            this.y = Math.random() * (this.game.height * 0.95 - this.height);
+            this.image = document.getElementById('hivewhale');
+            this.frameY = 0;
+            this.lives = 15;
+            this.score = this.lives;
+            this.type = 'hive';
+            this.speedX = Math.random() * -1.2 - 0.2;
+        }
+    }
+
+    class Drone extends Enemy{
+        constructor(game, x, y) {
+            super(game);
+            this.width = 115;
+            this.height = 95;
+            this.x = x
+            this.y = y;
+            this.image = document.getElementById('drone');
+            this.frameY = Math.floor(Math.random() * 2);
+            this.lives = 3;
+            this.score = this.lives;
+            this.type = 'drone';
+            this.speedX = Math.random() * -4.2 - 0.5;
         }
     }
 
@@ -365,7 +396,7 @@ window.addEventListener('load', function() {
             this.gameTime = 0;
             this.timeLimit = 15000;
             this.speed = 1;
-            this.debug = true;
+            this.debug = false;
         }
 
         update(deltaTime) {
@@ -386,7 +417,7 @@ window.addEventListener('load', function() {
                 enemy.update();
                 if (this.checkCollision(this.player, enemy)) {
                     enemy.markedForDeletion = true;                    
-                    for (let i = 0; i < 6; i++) {
+                    for (let i = 0; i < enemy.score; i++) {
                         this.particles.push(new Particle(this, enemy.x + enemy.width * 0.5, enemy.y + enemy.height * 0.5));
                     }
                     if (enemy.type === 'lucky') this.player.enterPowerUp();
@@ -397,8 +428,16 @@ window.addEventListener('load', function() {
                         enemy.lives--;
                         projectile.markedForDeletion = true;
                         this.particles.push(new Particle(this, enemy.x + enemy.width * 0.5, enemy.y + enemy.height * 0.5));
-                        if (enemy.lives <= 0) {                           
+                        if (enemy.lives <= 0) { 
+                            for (let i = 0; i < enemy.score; i++) {
+                                this.particles.push(new Particle(this, enemy.x + enemy.width * 0.5, enemy.y + enemy.height * 0.5));
+                            }                          
                             enemy.markedForDeletion = true;
+                            if (enemy.type === 'hive') {
+                                for (let i = 0; i < 4; i++) {
+                                    this.enemies.push(new Drone(this, enemy.x + Math.random() * enemy.width, enemy.y + Math.random() * enemy.height * 0.5));
+                                }                                
+                            }
                             if (!this.gameOver) this.score += enemy.score;
                             if (this.score > this.winningScore) this.gameOver = true;
                         }
@@ -416,8 +455,8 @@ window.addEventListener('load', function() {
 
         draw(context) {
             this.background.draw(context);
-            this.player.draw(context);
             this.ui.draw(context);
+            this.player.draw(context);            
             this.particles.forEach(particle => particle.draw(context));
             this.enemies.forEach(enemy => {
                 enemy.draw(context);
@@ -429,9 +468,8 @@ window.addEventListener('load', function() {
             const randomize = Math.random();
             if (randomize < 0.3) this.enemies.push(new Angler1(this));
             else if (randomize < 0.6) this.enemies.push(new Angler2(this));
-            else this.enemies.push(new LuckyFish(this));
-            
-            console.log(this.enemies);
+            else if (randomize < 0.8) this.enemies.push(new HiveWhale(this));            
+            else this.enemies.push(new LuckyFish(this));           
         }
 
         checkCollision(rect1, rect2) {
