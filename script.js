@@ -2,7 +2,7 @@ window.addEventListener('load', function() {
     // canvas setup
     const canvas = document.getElementById('canvas1');
     const ctx = canvas.getContext('2d');
-    canvas.width = 700;
+    canvas.width = 1000;
     canvas.height = 500;
 
     class InputHandler {
@@ -219,7 +219,7 @@ window.addEventListener('load', function() {
             this.y = Math.random() * (this.game.height * 0.95 - this.height);
             this.image = document.getElementById('angler1');
             this.frameY = Math.floor(Math.random() * 3);
-            this.lives = 2;
+            this.lives = 5;
             this.score = this.lives;
         }
     }
@@ -232,7 +232,7 @@ window.addEventListener('load', function() {
             this.y = Math.random() * (this.game.height * 0.95 - this.height);
             this.image = document.getElementById('angler2');
             this.frameY = Math.floor(Math.random() * 2);
-            this.lives = 3;
+            this.lives = 6;
             this.score = this.lives;
         }
     }
@@ -245,7 +245,7 @@ window.addEventListener('load', function() {
             this.y = Math.random() * (this.game.height * 0.95 - this.height);
             this.image = document.getElementById('lucky');
             this.frameY = Math.floor(Math.random() * 2);
-            this.lives = 3;
+            this.lives = 5;
             this.score = 15;
             this.type = 'lucky';
         }
@@ -259,7 +259,7 @@ window.addEventListener('load', function() {
             this.y = Math.random() * (this.game.height * 0.95 - this.height);
             this.image = document.getElementById('hivewhale');
             this.frameY = 0;
-            this.lives = 15;
+            this.lives = 20;
             this.score = this.lives;
             this.type = 'hive';
             this.speedX = Math.random() * -1.2 - 0.2;
@@ -394,7 +394,7 @@ window.addEventListener('load', function() {
             const formattedTime = (this.game.gameTime * 0.001).toFixed(1);
             context.fillText('Timer: ' + formattedTime, 20, 100);
             //game over messages
-            if (this.game.gameOver) {
+            if (this.game.gameOver) {             
                 context.textAlign = 'center';
                 let message1;
                 let message2;
@@ -402,7 +402,7 @@ window.addEventListener('load', function() {
                     message1 = 'Most Wondrous!';
                     message2 = 'Well done explorer!';
                 } else {
-                    message1 = 'You lose!';
+                    message1 = 'Defeated!';
                     message2 = 'Try again next time!';
                 }
                 context.font = '70px ' + this.fontFamily;
@@ -410,6 +410,20 @@ window.addEventListener('load', function() {
                 context.font = '25px ' + this.fontFamily;
                 context.fillText(message2, this.game.width * 0.5, this.game.height * 0.5 + 20);
 
+                const replayButton = document.getElementById('replay');
+                replayButton.style.display = 'block';
+
+                replayButton.addEventListener('click', function() {               
+                    game.gameOver = false;
+                    game.gameTime = 60000;
+                    game.score = 0;
+                    game.enemies = [];                    
+                    game.player.powerUp = false;
+                    game.player.frameY = 0;                    
+                    game.ammo = 20;
+                    replayButton.style.display = 'none';
+                    replayButton.removeEventListener('click', this);
+                });
             }
             // ammo
             if (this.game.player.powerUp) context.fillStyle = '#ffffbd';            
@@ -433,23 +447,23 @@ window.addEventListener('load', function() {
             this.particles = [];
             this.explosions = [];
             this.enemyTimer = 0;
-            this.enemyInterval = 1000;
+            this.enemyInterval = 1700;
             this.ammo = 20;
             this.maxAmmo = 50;
             this.ammoTimer = 0;
-            this.ammoInterval = 500;
+            this.ammoInterval = 350;
             this.gameOver = false;
             this.score = 0;
-            this.winningScore = 10;
-            this.gameTime = 0;
-            this.timeLimit = 15000;
+            this.winningScore = 200;
+            this.gameTime = 60000;
+            this.timeLimit = 0;
             this.speed = 1;
             this.debug = false;
         }
 
         update(deltaTime) {
-            if (!this.gameOver) this.gameTime += deltaTime;
-            if (this.gameTime > this.timeLimit) this.gameOver = true;
+            if (!this.gameOver) this.gameTime -= deltaTime;
+            if (this.gameTime < this.timeLimit) this.gameOver = true;
             this.background.update();
             this.background.layer4.update(); 
             this.player.update(deltaTime);
@@ -472,7 +486,7 @@ window.addEventListener('load', function() {
                         this.particles.push(new Particle(this, enemy.x + enemy.width * 0.5, enemy.y + enemy.height * 0.5));
                     }
                     if (enemy.type === 'lucky') this.player.enterPowerUp();
-                    else this.score--;
+                    else if (!this.gameOver) this.score--;
                 }
                 this.player.projectiles.forEach(projectile => {
                     if (this.checkCollision(projectile, enemy)) {
@@ -491,7 +505,7 @@ window.addEventListener('load', function() {
                                 }                                
                             }
                             if (!this.gameOver) this.score += enemy.score;
-                            if (this.score > this.winningScore) this.gameOver = true;
+                            // if (this.score > this.winningScore) this.gameOver = true;
                         }
                     }
                 })
@@ -506,8 +520,7 @@ window.addEventListener('load', function() {
         }
 
         draw(context) {
-            this.background.draw(context);
-            this.ui.draw(context);
+            this.background.draw(context);            
             this.player.draw(context);            
             this.particles.forEach(particle => particle.draw(context));
             this.enemies.forEach(enemy => {
@@ -516,6 +529,7 @@ window.addEventListener('load', function() {
             this.explosions.forEach(explosion => {
                 explosion.draw(context);
             });
+            this.ui.draw(context);
             this.background.layer4.draw(context);
         }
 
@@ -523,7 +537,7 @@ window.addEventListener('load', function() {
             const randomize = Math.random();
             if (randomize < 0.3) this.enemies.push(new Angler1(this));
             else if (randomize < 0.6) this.enemies.push(new Angler2(this));
-            else if (randomize < 0.8) this.enemies.push(new HiveWhale(this));            
+            else if (randomize < 0.7) this.enemies.push(new HiveWhale(this));            
             else this.enemies.push(new LuckyFish(this));           
         }
 
@@ -539,7 +553,7 @@ window.addEventListener('load', function() {
                       rect1.y < rect2.y + rect2.height &&
                       rect1.height + rect1.y > rect2.y  )
         }
-    }
+    }    
 
     const game = new Game(canvas.width, canvas.height);
     let lastTime = 0;
@@ -554,5 +568,5 @@ window.addEventListener('load', function() {
         requestAnimationFrame(animate);
     }
 
-    animate(0);
+    animate(0);    
 });
