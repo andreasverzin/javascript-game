@@ -8,7 +8,7 @@ window.addEventListener('load', function() {
     class InputHandler {
         constructor(game) {
             this.game = game;
-            window.addEventListener('keydown', e => {
+            window.addEventListener('keydown', e => {                
                 if ((   (e.key === 'ArrowUp') ||
                         (e.key === 'ArrowDown')
                 ) && this.game.keys.indexOf(e.key) === -1) {
@@ -102,7 +102,7 @@ window.addEventListener('load', function() {
             this.frameY = 0;
             this.speedY = 0;
             this.maxFrame = 37;
-            this.maxSpeed = 7;
+            this.maxSpeed = 3;
             this.projectiles = [];
             this.image = document.getElementById('player');
             this.powerUp = false;
